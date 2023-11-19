@@ -1,4 +1,5 @@
 module.exports = ({ env }) => ({
+  url: "https://github.itvkist.io/fr_admin/",
   auth: {
     secret: env('ADMIN_JWT_SECRET'),
   },
