@@ -68,7 +68,7 @@ accessories_classify.eval()
 
 def loadBase64Img(uri):
     encoded_data = uri.split(',')[1]
-    nparr = np.fromstring(base64.b64decode(encoded_data), np.uint8)
+    nparr = np.frombuffer(base64.b64decode(encoded_data), np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     return img
 
@@ -123,6 +123,7 @@ def get_embeddings(img_input, ann_id, local_register = False, register=False):
     bboxes = []
     ids = []
     accessories = []
+    distances_ = []
     if not register:
         p = hnswlib.Index(space = 'cosine', dim = 512)
         p.load_index("indexes/index_" + ann_id + '.bin')
@@ -140,6 +141,7 @@ def get_embeddings(img_input, ann_id, local_register = False, register=False):
         boxes[i,:] = [xmin, ymin, xmax, ymax]
         infer_img = image[int(ymin): int(ymax), int(xmin): int(xmax), :]
         person_id = ['-1', '-1', '-1']
+        distance = ['0', '0', '0']
         accessory_id = 2
         if infer_img is not None and infer_img.shape[0] != 0 and infer_img.shape[1] != 0:
             with torch.no_grad():
@@ -150,17 +152,21 @@ def get_embeddings(img_input, ann_id, local_register = False, register=False):
                         neighbors, distances = p.knn_query(feat.detach().cpu().numpy(), k=3)
                         if (distances[0][0] <= 0.55 and accessory_id != 1) or (distances[0][0] <= 0.75 and accessory_id == 1):
                             person_id = [str(n) for n in neighbors[0]]
+                            distance = [str(d) for d in distances[0]]
                     except Exception as e:
                         print(e)
                         person_id = ['-1', '-1', '-1']
+                        distance = ['0', '0', '0']
             feats.append(np.array2string(feat.detach().cpu().numpy()))
             feats_np.append(feat.detach().cpu().numpy())
             images.append(infer_img.copy())
             bboxes.append("{} {} {} {}".format(xmin, ymin, xmax, ymax))
             accessories.append(str(accessory_id))
             ids.append(person_id)
+            distances_.append(distance)
+
     
-    return feats_np, feats, images, bboxes, accessories, ids
+    return feats_np, feats, images, bboxes, accessories, ids, distances_
 
 async def facerec(request):
     """
@@ -198,11 +204,11 @@ async def facerec(request):
         return  web.json_response({"result": {'message': 'Vui lòng truyền ảnh dưới dạng Base64'}}, status=400)
 
     if 'local_register' in list(req.keys()):
-        _, feats, images, bboxes, accessories, ids = get_embeddings(img_input, ann_id, req['local_register'])
+        _, feats, images, bboxes, accessories, ids, distances = get_embeddings(img_input, ann_id, req['local_register'])
     else:
-        _, feats, images, bboxes, accessories, ids = get_embeddings(img_input, ann_id)
+        _, feats, images, bboxes, accessories, ids, distances = get_embeddings(img_input, ann_id)
 
-    return  web.json_response({'result': {"bboxes": bboxes, "feats": feats, "ids": ids, "accessories": accessories}}, status=200)
+    return  web.json_response({'result': {"bboxes": bboxes, "feats": feats, "ids": ids, "distances": distances, "accessories": accessories}}, status=200)
 
 async def facereg(request):
     """
@@ -244,9 +250,9 @@ async def facereg(request):
         return  web.json_response({"result": {'message': 'Vui lòng truyền ảnh dưới dạng Base64'}}, status=400)
 
     if 'local_register' in list(req.keys()):
-        feats_np, feats, images, bboxes, accessories, ids = get_embeddings(img_input, ann_id, req['local_register'], True)
+        feats_np, feats, images, bboxes, accessories, ids, _ = get_embeddings(img_input, ann_id, req['local_register'], True)
     else:
-        feats_np, feats, images, bboxes, accessories, ids = get_embeddings(img_input, ann_id, True, True)
+        feats_np, feats, images, bboxes, accessories, ids, _ = get_embeddings(img_input, ann_id, True, True)
 
     p = hnswlib.Index(space = 'cosine', dim = 512)
     if not os.path.isfile("indexes/index_" + ann_id + '.bin'):
@@ -258,10 +264,14 @@ async def facereg(request):
         p.load_index("indexes/index_" + ann_id + '.bin', max_elements=1000)
 
     for feat in feats_np[:1]:
+        try:
+            p.unmark_deleted(int(id_))
+        except:
+            print("unmark no label")
         p.add_items(feat, np.array([int(id_)]))
         p.save_index("indexes/index_" + ann_id + '.bin')
 
-    return  web.json_response({'result': {"bboxes": bboxes, "feats": feats, "accessories": accessories, "message": "success"}}, status=200)
+    return  web.json_response({'result': {"bboxes": bboxes, "feats": feats, "accessories": accessories, "register_id": id_, "message": "success"}}, status=200)
 
 async def facedel(request):
     """
@@ -294,10 +304,16 @@ async def facedel(request):
     p = hnswlib.Index(space = 'cosine', dim = 512)
     p.load_index("indexes/index_" + ann_id + '.bin', max_elements=1000)
 
-    for id_ in ids:
-        p.mark_deleted(id_)
+    id_ = None
+    try:
+        for id_ in ids:
+            p.mark_deleted(int(id_))
+        p.save_index("indexes/index_" + ann_id + '.bin')
+    except Exception as e:
+        print(e)
+        return  web.json_response({'result': {"message": "failed", "id": str(id_)}}, status=500)
 
-    return  web.json_response({'result': {"message": "success"}}, status=200)
+    return  web.json_response({'result': {"message": "success", "ids": ids}}, status=200)
 
 
 app.router.add_route('POST',"/facerec", facerec)
