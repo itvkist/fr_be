@@ -1,0 +1,31 @@
+{
+  "kind": "collectionType",
+  "collectionName": "register_images",
+  "info": {
+    "singularName": "register-image",
+    "pluralName": "register-images",
+    "displayName": "RegisterImage"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "image": {
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ],
+      "type": "media",
+      "multiple": false
+    },
+    "individual": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::individual.individual",
+      "inversedBy": "register_images"
+    }
+  }
+}

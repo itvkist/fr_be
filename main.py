@@ -125,7 +125,7 @@ def get_embeddings(img_input, ann_id, local_register = False, register=False):
     accessories = []
     if not register:
         p = hnswlib.Index(space = 'cosine', dim = 512)
-        p.load_index("indexes/index_" + str(ann_id) + '.bin')
+        p.load_index("indexes/index_" + ann_id + '.bin')
     for i in range(boxes.shape[0]):
         box = boxes[i, :]
         xmin, ymin, xmax, ymax = box
@@ -147,9 +147,8 @@ def get_embeddings(img_input, ann_id, local_register = False, register=False):
                 accessory_id = check_accessories(Image.fromarray(infer_img))
                 if not register:
                     try:
-                        neighbors, distances = p.knn_query(feat.detach().cpu().numpy(), k=1)
-                        print(neighbors)
-                        if (distances[0][0] <= 0.45 and accessory_id != 1) or (distances[0][0] <= 0.65 and accessory_id == 1):
+                        neighbors, distances = p.knn_query(feat.detach().cpu().numpy(), k=3)
+                        if (distances[0][0] <= 0.55 and accessory_id != 1) or (distances[0][0] <= 0.75 and accessory_id == 1):
                             person_id = [str(n) for n in neighbors[0]]
                     except Exception as e:
                         print(e)
@@ -250,7 +249,7 @@ async def facereg(request):
         feats_np, feats, images, bboxes, accessories, ids = get_embeddings(img_input, ann_id, True, True)
 
     p = hnswlib.Index(space = 'cosine', dim = 512)
-    if not os.path.isdir("indexes/index_" + ann_id + '.bin'):
+    if not os.path.isfile("indexes/index_" + ann_id + '.bin'):
         p.init_index(max_elements = 1000, ef_construction = 200, M = 16)
         p.set_ef(10)
         p.set_num_threads(4)
@@ -258,15 +257,52 @@ async def facereg(request):
     else:
         p.load_index("indexes/index_" + ann_id + '.bin', max_elements=1000)
 
-    for feat in feats_np:
+    for feat in feats_np[:1]:
         p.add_items(feat, np.array([int(id_)]))
         p.save_index("indexes/index_" + ann_id + '.bin')
+
+    return  web.json_response({'result': {"bboxes": bboxes, "feats": feats, "accessories": accessories, "message": "success"}}, status=200)
+
+async def facedel(request):
+    """
+    ---
+    description: This end-point allow to recognize face identity.
+    tags:
+    - Face Recognition
+    produces:
+    - text/json
+    responses:
+        "200":
+            description: successful operation
+        "400":
+            description: Vui lòng truyền secret key
+        "400":
+            description: Vui lòng truyền ảnh dưới dạng Base64
+        "403":
+            description: Secret key không hợp lệ
+    """
+    req = await request.json()
+
+    ann_id = ""
+    if "ann_id" in list(req.keys()):
+        ann_id = req["ann_id"]
+
+    ids = []
+    if "ids" in list(req.keys()):
+        ids = req["ids"]
+
+    p = hnswlib.Index(space = 'cosine', dim = 512)
+    p.load_index("indexes/index_" + ann_id + '.bin', max_elements=1000)
+
+    for id_ in ids:
+        p.mark_deleted(id_)
 
     return  web.json_response({'result': {"message": "success"}}, status=200)
 
 
 app.router.add_route('POST',"/facerec", facerec)
 app.router.add_route('POST',"/facereg", facereg)
+app.router.add_route('POST',"/facedel", facedel)
 
 if __name__ == "__main__":
     web.run_app(app, port=5001)

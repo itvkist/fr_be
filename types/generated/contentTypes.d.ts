@@ -362,164 +362,6 @@ export interface AdminTransferTokenPermission extends Schema.CollectionType {
   };
 }
 
-export interface ApiCameraCamera extends Schema.CollectionType {
-  collectionName: 'cameras';
-  info: {
-    singularName: 'camera';
-    pluralName: 'cameras';
-    displayName: 'Camera';
-    description: '';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    connectionString: Attribute.String;
-    user: Attribute.Relation<
-      'api::camera.camera',
-      'manyToOne',
-      'plugin::users-permissions.user'
-    >;
-    createdAt: Attribute.DateTime;
-    updatedAt: Attribute.DateTime;
-    publishedAt: Attribute.DateTime;
-    createdBy: Attribute.Relation<
-      'api::camera.camera',
-      'oneToOne',
-      'admin::user'
-    > &
-      Attribute.Private;
-    updatedBy: Attribute.Relation<
-      'api::camera.camera',
-      'oneToOne',
-      'admin::user'
-    > &
-      Attribute.Private;
-  };
-}
-
-export interface ApiGroupGroup extends Schema.CollectionType {
-  collectionName: 'groups';
-  info: {
-    singularName: 'group';
-    pluralName: 'groups';
-    displayName: 'Group';
-    description: '';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    name: Attribute.String;
-    individuals: Attribute.Relation<
-      'api::group.group',
-      'oneToMany',
-      'api::individual.individual'
-    >;
-    user: Attribute.Relation<
-      'api::group.group',
-      'manyToOne',
-      'plugin::users-permissions.user'
-    >;
-    createdAt: Attribute.DateTime;
-    updatedAt: Attribute.DateTime;
-    publishedAt: Attribute.DateTime;
-    createdBy: Attribute.Relation<
-      'api::group.group',
-      'oneToOne',
-      'admin::user'
-    > &
-      Attribute.Private;
-    updatedBy: Attribute.Relation<
-      'api::group.group',
-      'oneToOne',
-      'admin::user'
-    > &
-      Attribute.Private;
-  };
-}
-
-export interface ApiIndividualIndividual extends Schema.CollectionType {
-  collectionName: 'individuals';
-  info: {
-    singularName: 'individual';
-    pluralName: 'individuals';
-    displayName: 'Individual';
-    description: '';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    name: Attribute.String;
-    dob: Attribute.Date;
-    email: Attribute.Email;
-    gender: Attribute.Enumeration<['Male', 'Female', 'Others']>;
-    group: Attribute.Relation<
-      'api::individual.individual',
-      'manyToOne',
-      'api::group.group'
-    >;
-    createdAt: Attribute.DateTime;
-    updatedAt: Attribute.DateTime;
-    publishedAt: Attribute.DateTime;
-    createdBy: Attribute.Relation<
-      'api::individual.individual',
-      'oneToOne',
-      'admin::user'
-    > &
-      Attribute.Private;
-    updatedBy: Attribute.Relation<
-      'api::individual.individual',
-      'oneToOne',
-      'admin::user'
-    > &
-      Attribute.Private;
-  };
-}
-
-export interface ApiTimelineTimeline extends Schema.CollectionType {
-  collectionName: 'timelines';
-  info: {
-    singularName: 'timeline';
-    pluralName: 'timelines';
-    displayName: 'Timeline';
-    description: '';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    individual: Attribute.Relation<
-      'api::timeline.timeline',
-      'oneToOne',
-      'api::individual.individual'
-    >;
-    image: Attribute.Media;
-    embedding: Attribute.Text;
-    camera: Attribute.Relation<
-      'api::timeline.timeline',
-      'oneToOne',
-      'api::camera.camera'
-    >;
-    createdAt: Attribute.DateTime;
-    updatedAt: Attribute.DateTime;
-    publishedAt: Attribute.DateTime;
-    createdBy: Attribute.Relation<
-      'api::timeline.timeline',
-      'oneToOne',
-      'admin::user'
-    > &
-      Attribute.Private;
-    updatedBy: Attribute.Relation<
-      'api::timeline.timeline',
-      'oneToOne',
-      'admin::user'
-    > &
-      Attribute.Private;
-  };
-}
-
 export interface PluginUploadFile extends Schema.CollectionType {
   collectionName: 'files';
   info: {
@@ -827,7 +669,19 @@ export interface PluginUsersPermissionsUser extends Schema.CollectionType {
       'oneToMany',
       'api::group.group'
     >;
-    annId: Attribute.UID;
+    annId: Attribute.UID<
+      undefined,
+      undefined,
+      {
+        'uuid-format': '^[A-Za-z0-9]{64}$';
+      }
+    > &
+      Attribute.CustomField<
+        'plugin::strapi-advanced-uuid.uuid',
+        {
+          'uuid-format': '^[A-Za-z0-9]{64}$';
+        }
+      >;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     createdBy: Attribute.Relation<
@@ -845,6 +699,249 @@ export interface PluginUsersPermissionsUser extends Schema.CollectionType {
   };
 }
 
+export interface PluginRoutePermissionRoutePermission
+  extends Schema.CollectionType {
+  collectionName: 'route_permissions';
+  info: {
+    singularName: 'route-permission';
+    pluralName: 'route-permissions';
+    displayName: 'route-permission';
+  };
+  options: {
+    draftAndPublish: false;
+    comment: '';
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+    'content-type-builder': {
+      visible: false;
+    };
+  };
+  attributes: {
+    action: Attribute.String;
+    role: Attribute.Relation<
+      'plugin::route-permission.route-permission',
+      'oneToOne',
+      'plugin::users-permissions.role'
+    >;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'plugin::route-permission.route-permission',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<
+      'plugin::route-permission.route-permission',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
+export interface ApiCameraCamera extends Schema.CollectionType {
+  collectionName: 'cameras';
+  info: {
+    singularName: 'camera';
+    pluralName: 'cameras';
+    displayName: 'Camera';
+    description: '';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    connectionString: Attribute.String;
+    user: Attribute.Relation<
+      'api::camera.camera',
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    publishedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'api::camera.camera',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<
+      'api::camera.camera',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
+export interface ApiGroupGroup extends Schema.CollectionType {
+  collectionName: 'groups';
+  info: {
+    singularName: 'group';
+    pluralName: 'groups';
+    displayName: 'Group';
+    description: '';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    name: Attribute.String;
+    individuals: Attribute.Relation<
+      'api::group.group',
+      'oneToMany',
+      'api::individual.individual'
+    >;
+    user: Attribute.Relation<
+      'api::group.group',
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    publishedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'api::group.group',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<
+      'api::group.group',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
+export interface ApiIndividualIndividual extends Schema.CollectionType {
+  collectionName: 'individuals';
+  info: {
+    singularName: 'individual';
+    pluralName: 'individuals';
+    displayName: 'Individual';
+    description: '';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    name: Attribute.String;
+    dob: Attribute.Date;
+    email: Attribute.Email;
+    gender: Attribute.Enumeration<['Male', 'Female', 'Others']>;
+    group: Attribute.Relation<
+      'api::individual.individual',
+      'manyToOne',
+      'api::group.group'
+    >;
+    register_images: Attribute.Relation<
+      'api::individual.individual',
+      'oneToMany',
+      'api::register-image.register-image'
+    >;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    publishedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'api::individual.individual',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<
+      'api::individual.individual',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
+export interface ApiRegisterImageRegisterImage extends Schema.CollectionType {
+  collectionName: 'register_images';
+  info: {
+    singularName: 'register-image';
+    pluralName: 'register-images';
+    displayName: 'RegisterImage';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    image: Attribute.Media;
+    individual: Attribute.Relation<
+      'api::register-image.register-image',
+      'manyToOne',
+      'api::individual.individual'
+    >;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    publishedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'api::register-image.register-image',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<
+      'api::register-image.register-image',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
+export interface ApiTimelineTimeline extends Schema.CollectionType {
+  collectionName: 'timelines';
+  info: {
+    singularName: 'timeline';
+    pluralName: 'timelines';
+    displayName: 'Timeline';
+    description: '';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    individual: Attribute.Relation<
+      'api::timeline.timeline',
+      'oneToOne',
+      'api::individual.individual'
+    >;
+    image: Attribute.Media;
+    embedding: Attribute.Text;
+    camera: Attribute.Relation<
+      'api::timeline.timeline',
+      'oneToOne',
+      'api::camera.camera'
+    >;
+    accessory: Attribute.Enumeration<['glass', 'mask', 'normal']>;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    publishedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'api::timeline.timeline',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<
+      'api::timeline.timeline',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
 declare module '@strapi/types' {
   export module Shared {
     export interface ContentTypes {
@@ -855,16 +952,18 @@ declare module '@strapi/types' {
       'admin::api-token-permission': AdminApiTokenPermission;
       'admin::transfer-token': AdminTransferToken;
       'admin::transfer-token-permission': AdminTransferTokenPermission;
-      'api::camera.camera': ApiCameraCamera;
-      'api::group.group': ApiGroupGroup;
-      'api::individual.individual': ApiIndividualIndividual;
-      'api::timeline.timeline': ApiTimelineTimeline;
       'plugin::upload.file': PluginUploadFile;
       'plugin::upload.folder': PluginUploadFolder;
       'plugin::i18n.locale': PluginI18NLocale;
       'plugin::users-permissions.permission': PluginUsersPermissionsPermission;
       'plugin::users-permissions.role': PluginUsersPermissionsRole;
       'plugin::users-permissions.user': PluginUsersPermissionsUser;
+      'plugin::route-permission.route-permission': PluginRoutePermissionRoutePermission;
+      'api::camera.camera': ApiCameraCamera;
+      'api::group.group': ApiGroupGroup;
+      'api::individual.individual': ApiIndividualIndividual;
+      'api::register-image.register-image': ApiRegisterImageRegisterImage;
+      'api::timeline.timeline': ApiTimelineTimeline;
     }
   }
 }

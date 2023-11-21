@@ -78,7 +78,11 @@
       "mappedBy": "user"
     },
     "annId": {
-      "type": "uid"
+      "type": "customField",
+      "options": {
+        "uuid-format": "^[A-Za-z0-9]{64}$"
+      },
+      "customField": "plugin::strapi-advanced-uuid.uuid"
     }
   }
 }

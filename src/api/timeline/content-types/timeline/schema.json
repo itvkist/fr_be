@@ -35,6 +35,14 @@
       "type": "relation",
       "relation": "oneToOne",
       "target": "api::camera.camera"
+    },
+    "accessory": {
+      "type": "enumeration",
+      "enum": [
+        "glass",
+        "mask",
+        "normal"
+      ]
     }
   }
 }

@@ -34,6 +34,12 @@
       "relation": "manyToOne",
       "target": "api::group.group",
       "inversedBy": "individuals"
+    },
+    "register_images": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::register-image.register-image",
+      "mappedBy": "individual"
     }
   }
 }

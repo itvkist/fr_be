@@ -117,3 +117,5 @@ __pycache__
 ms1mv3_arcface_r50_fp16
 detect_RFB_640
 *.db
+fr_admin
+indexes
